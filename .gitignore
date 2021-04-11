@@ -13,3 +13,7 @@
 
 # JetBrains IDEs
 .idea
+
+# Certificate files used for testing
+server.crt
+server.key
