@@ -63,6 +63,7 @@ func (app *App) makeBeforeFunc() cli.BeforeFunc {
 func (app *App) makeAppCommands() []*cli.Command {
 	return []*cli.Command{
 		app.makeServeCommand(),
+		app.makeTrainCommand(),
 	}
 }
 
