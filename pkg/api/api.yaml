@@ -1,0 +1,69 @@
+# Copyright (c) 2021, The NLP Odyssey Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style
+# license that can be found in the LICENSE file.
+
+openapi: 3.0.3
+
+info:
+  title: LangDet
+  version: 0.1.0
+
+paths:
+  /detect_language:
+    post:
+      description: Detect the language of a text
+      operationId: detectLanguage
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DetectLanguageInput'
+      responses:
+        default:
+          description: A list of detected languages sorted by confidence in descending order
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetectLanguageResponse'
+
+components:
+  schemas:
+    ResponseErrors:
+      type: array
+      items:
+        $ref: '#/components/schemas/ResponseError'
+    ResponseError:
+      type: object
+      properties:
+        message:
+          type: string
+      additionalProperties: false
+    DetectLanguageInput:
+      type: object
+      properties:
+        text:
+          type: string
+    DetectLanguageResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/DetectLanguageData'
+        errors:
+          $ref: '#/components/schemas/ResponseErrors'
+      additionalProperties: false
+    DetectLanguageData:
+      type: object
+      properties:
+        languages:
+          type: array
+          items:
+            $ref: '#/components/schemas/DetectedLanguage'
+      additionalProperties: false
+    DetectedLanguage:
+      type: object
+      properties:
+        language_code:
+          type: string
+        confidence:
+          type: number
+      additionalProperties: false
