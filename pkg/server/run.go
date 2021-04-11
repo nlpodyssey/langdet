@@ -20,17 +20,6 @@ import (
 
 // Run runs the server according to its configuration.
 func (s *Server) Run() error {
-	if s.config.TLSEnabled {
-		return s.runTLS()
-	}
-	return s.runInsecure()
-}
-
-func (s *Server) address() string {
-	return fmt.Sprintf("%s:%d", s.config.Host, s.config.Port)
-}
-
-func (s *Server) runInsecure() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -46,52 +35,45 @@ func (s *Server) runInsecure() error {
 	mux := http.NewServeMux()
 	mux.Handle("/", gwmux)
 
-	lis, err := net.Listen("tcp", s.address())
+	listener, err := net.Listen("tcp", s.address())
 	if err != nil {
 		return fmt.Errorf("TCP listen error: %w", err)
 	}
 
+	handler := handlerFunc(grpcServer, mux)
+
+	if s.config.TLSEnabled {
+		return s.serveTLS(listener, handler)
+	}
+	return s.serveInsecure(listener, handler)
+}
+
+func (s *Server) address() string {
+	return fmt.Sprintf("%s:%d", s.config.Host, s.config.Port)
+}
+
+func (s *Server) serveInsecure(listener net.Listener, handler http.Handler) error {
 	h2s := &http2.Server{}
 	h1s := &http.Server{
-		Handler: h2c.NewHandler(handlerFunc(grpcServer, mux), h2s),
+		Handler: h2c.NewHandler(handler, h2s),
 	}
 
 	s.logger.Info().Msgf("Serving on %s (insecure)", s.address())
-	err = h1s.Serve(lis)
+	err := h1s.Serve(listener)
 	if err != nil {
 		return fmt.Errorf("server error: %w", err)
 	}
 	return nil
 }
 
-func (s *Server) runTLS() error {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
+func (s *Server) serveTLS(listener net.Listener, handler http.Handler) error {
 	tlsCert, err := tls.LoadX509KeyPair(s.config.TLSCert, s.config.TLSKey)
 	if err != nil {
 		return fmt.Errorf("error loading TLS certificate: %w", err)
 	}
 
-	grpcServer := grpc.NewServer()
-	api.RegisterApiServer(grpcServer, s)
-
-	gwmux := runtime.NewServeMux()
-	err = api.RegisterApiHandlerServer(ctx, gwmux, s)
-	if err != nil {
-		return fmt.Errorf("failed to register service handler: %w", err)
-	}
-
-	mux := http.NewServeMux()
-	mux.Handle("/", gwmux)
-
-	lis, err := net.Listen("tcp", s.address())
-	if err != nil {
-		return fmt.Errorf("TCP listen error: %w", err)
-	}
-
 	hs := &http.Server{
-		Handler: handlerFunc(grpcServer, mux),
+		Handler: handler,
 		TLSConfig: &tls.Config{
 			Certificates: []tls.Certificate{tlsCert},
 			NextProtos:   []string{"h2"},
@@ -99,7 +81,7 @@ func (s *Server) runTLS() error {
 	}
 
 	s.logger.Info().Msgf("Serving on %s (TLS)", s.address())
-	err = hs.Serve(tls.NewListener(lis, hs.TLSConfig))
+	err = hs.Serve(tls.NewListener(listener, hs.TLSConfig))
 	if err != nil {
 		return fmt.Errorf("server error: %w", err)
 	}
