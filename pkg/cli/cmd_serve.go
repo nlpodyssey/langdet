@@ -5,7 +5,6 @@
 package cli
 
 import (
-	"fmt"
 	"github.com/nlpodyssey/langdet/pkg/configuration"
 	"github.com/nlpodyssey/langdet/pkg/server"
 	"github.com/urfave/cli/v2"
@@ -50,14 +49,17 @@ func (app *App) makeServeCommand() *cli.Command {
 }
 
 func (app *App) serve(c *cli.Context) error {
-	config := &configuration.ServerConfig{
+	config := makeServerConfig(c)
+	srv := server.New(config, app.logger)
+	return srv.Run()
+}
+
+func makeServerConfig(c *cli.Context) *configuration.ServerConfig {
+	return &configuration.ServerConfig{
 		Host:       c.String("host"),
 		Port:       c.Int("port"),
 		TLSEnabled: c.Bool("tls"),
 		TLSCert:    c.String("tls-cert"),
 		TLSKey:     c.String("tls-key"),
 	}
-	srv := server.New(config, app.logger)
-	_ = srv
-	return fmt.Errorf("serve command not implemented")
 }
