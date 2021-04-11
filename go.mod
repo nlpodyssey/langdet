@@ -8,6 +8,9 @@ go 1.16
 
 require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.3.0
+	github.com/rs/zerolog v1.21.0
+	github.com/russross/blackfriday/v2 v2.1.0 // indirect
+	github.com/urfave/cli/v2 v2.3.0
 	golang.org/x/net v0.0.0-20210410081132-afb366fc7cd1 // indirect
 	golang.org/x/sys v0.0.0-20210403161142-5e06dd20ab57 // indirect
 	google.golang.org/genproto v0.0.0-20210406143921-e86de6bf7a46
