@@ -1,0 +1,50 @@
+syntax = "proto3";
+option go_package = "github.com/nlpodyssey/langdet/pkg/api";
+
+package api;
+
+import "google/api/annotations.proto";
+
+import "google/protobuf/descriptor.proto";
+
+import "google/protobuf/empty.proto";
+
+message ResponseErrors {
+  repeated ResponseError value = 1;
+}
+
+message ResponseError {
+  string message = 1;
+}
+
+message DetectLanguageInput {
+  string text = 1;
+}
+
+message DetectLanguageResponse {
+  DetectLanguageData data = 1;
+
+  ResponseErrors errors = 2;
+}
+
+message DetectLanguageData {
+  repeated DetectedLanguage languages = 1;
+}
+
+message DetectedLanguage {
+  string language_code = 1;
+
+  float confidence = 2;
+}
+
+//DetectLanguageParameters holds parameters to DetectLanguage
+message DetectLanguageRequest {
+  DetectLanguageInput detect_language_input = 1;
+}
+
+service Api {
+  rpc DetectLanguage ( DetectLanguageRequest ) returns ( DetectLanguageResponse ) {
+    option (google.api.http) = { post:"/detect_language" body:"detect_language_input"  };
+  }
+}
+
